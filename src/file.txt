@@ -1,0 +1,156 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
+
+var key = 0;
+var change = 0;
+
+class QuestionCard extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			chosen: false
+		}
+	}
+
+	render() {
+		var HTML;
+		if (this.state.chosen) {
+			HTML = (<div>{this.props.question}</div>);
+		} else {
+			HTML = (<div onClick={() => this.setState({chosen: true})}>{this.props.value}</div>)
+		}
+		return(<div>
+				{HTML}
+				</div>
+			);
+	}
+}
+
+class CategoryTitleCard extends React.Component {
+	constructor(props) {
+		super(props);
+	}
+
+	render() {
+		return(
+				<div>{this.props.name}</div>
+			);
+	}
+}
+
+var questionsArray = [];
+
+class Main extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			promisedFinished: false
+		}
+	}
+
+	handleData = (data) => {
+		let array = [];
+		array.push(<CategoryTitleCard key={key} name={data.title} />);
+		key += 1;
+		let counter = 0;
+		let requiredValue = 200;
+		let valueCoef = 1;
+		for (let i = 0; i < 5; i++) {
+			try {
+				if (data.clues[i].value === (100 || 300 || 500)) {
+					valueCoef = 2;
+					break;
+				}
+			}
+			catch(err) {
+				console.log(err);
+			}
+		}
+		console.log(valueCoef);
+		let randomClue;
+		let length = data.clues.length;
+		console.log(data.clues);
+		let tried = 0;
+		let value;
+		let clue;
+		while (counter < 5) {
+			randomClue = Math.floor(Math.random() * length);
+			clue = data.clues[randomClue];
+			value = clue.value;
+			//console.log(value);
+			if (value !== null) {
+				if (value * valueCoef !== requiredValue) {
+					continue;
+				}
+			} else {
+				tried += 1;
+				if (tried === 10) {
+					value = requiredValue / valueCoef;
+				} else {
+					continue;
+				}
+			}
+			
+
+			array.push(<QuestionCard key={key} value={value * valueCoef} question={clue.question} answer={clue.answer} />);
+			requiredValue += 200;
+			counter += 1;
+			key += 1;
+			questionsArray.push(array);
+		}
+
+		if (questionsArray.length === 6) {
+			this.setState({promisedFinished: questionsArray})
+		}
+	}
+
+	render() {
+		let categoryObj;
+		let wholeBoard = [];
+		if (this.state.promisedFinished === false) {
+			for (let i = 0; i < 6; i++) {
+				fetch('https://jservice.io/api/category?id=' + Math.floor(Math.random() * 18418)).then(res => res.json()).then(data => this.handleData(data));
+				console.log('loop');
+			}
+		}
+	
+
+
+		/*while (wholeBoard.length < 6) {
+			continue;
+		}*/
+		console.log(categoryObj);
+			console.log(this.state.promisedFinished);
+			
+		return(
+			<div className='grid-container'>
+				{this.state.promisedFinished ? this.state.promisedFinished : null}
+				<Change change={change} />
+			</div>
+			);
+	}
+}
+
+class Change extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			change: this.props.change
+		}
+	}
+
+	change = () => {
+		change += 1;
+		console.log(change);
+	}
+
+	render() {
+		return(
+				<div onClick={() => this.change()}>
+					{this.props.change}
+				</div>
+			);
+	}
+}
+
+ReactDOM.render(<Main />, document.getElementById('root'));
